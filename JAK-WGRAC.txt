@@ -1,0 +1,73 @@
+DZIENNIK — instalacja na telefonie
+==================================
+
+W paczce:
+  index.html               aplikacja
+  manifest.webmanifest     opis dla systemu (nazwa, ikona)
+  sw.js                    tryb offline
+  icon-192.png / icon-512.png / icon-maskable-512.png / apple-touch-icon.png
+
+
+SPOSÓB 1 — przez USB, bez internetu (2 minuty)
+----------------------------------------------
+1. Podłącz telefon do laptopa kablem USB.
+2. Na telefonie wysuń pasek powiadomień i przy "Ładowanie przez USB"
+   wybierz "Przesyłanie plików" (MTP).
+3. Na laptopie otwórz pamięć telefonu, wejdź do folderu Download
+   i skopiuj tam CAŁY folder dziennik-app (wszystkie pliki razem).
+4. Odłącz kabel. Na telefonie otwórz aplikację Pliki > Pobrane >
+   dziennik-app i dotknij index.html. Wybierz otwarcie w Chrome.
+5. W Chrome: menu (trzy kropki) > "Dodaj do ekranu głównego".
+
+Działa w całości offline, dane siedzą na telefonie.
+Minus: przy tej metodzie Android zwykle daje skrót ze zwykłą ikonką
+przeglądarki, a nie tę ładną. Notatki AI też nie zadziałają, bo
+przeglądarka blokuje takie połączenia z pliku lokalnego.
+
+
+SPOSÓB 2 — przez GitHub Pages, za darmo (10 minut, wszystko działa)
+-------------------------------------------------------------------
+Tak dostaniesz prawdziwą aplikację: własna ikona, pełny ekran,
+bez paska przeglądarki, offline i z działającymi notatkami.
+
+1. Załóż konto na github.com.
+2. Kliknij "New repository", nazwij np. dziennik, ustaw Public, utwórz.
+3. Na stronie repozytorium: "Add file" > "Upload files".
+   Przeciągnij wszystkie pliki z tej paczki (same pliki, nie folder).
+   Kliknij "Commit changes".
+4. Wejdź w Settings > Pages. W "Source" wybierz "Deploy from a branch",
+   branch "main", folder "/ (root)". Zapisz.
+5. Po minucie na tej samej stronie pojawi się adres, w stylu
+   https://twojanazwa.github.io/dziennik/
+6. Otwórz ten adres w Chrome na telefonie.
+   Menu (trzy kropki) > "Zainstaluj aplikację".
+
+Gotowe. Ikona ląduje na ekranie głównym, apka odpala się jak zwykła.
+Repozytorium możesz zrobić publiczne — leży tam tylko kod, nie dane.
+Twoje wpisy zostają wyłącznie na telefonie.
+
+
+NOTATKI AI
+----------
+Wymagają klucza z console.anthropic.com (zakładka API Keys).
+W aplikacji: stopka > "klucz API" > wklej > zapisz.
+Klucz siedzi tylko na tym telefonie. Jedna notatka to ułamek grosza.
+Jeśli zgubisz telefon, wejdź na console.anthropic.com i skasuj klucz.
+Bez klucza działa cała reszta, tylko notatek nie będzie.
+
+
+ZAPIS WIECZORNY
+---------------
+Pięć pól: godzina położenia, godzina pobudki, liczba outreachy,
+odczyt "jak jest teraz" i krótka notatka własna.
+Obowiązkowy jest tylko odczyt - to on zalicza zapis za dany dzień.
+Notatka jest nieobowiązkowa, ale jeśli ją napiszesz, model bierze ją
+pod uwagę przy pisaniu podsumowania. Dni z notatką mają kropkę
+w rogu kratki, a same notatki zbierają się na liście w podsumowaniu.
+
+
+KOPIA DANYCH
+------------
+Stopka > "pobierz kopię" zapisuje plik JSON z dniami i notatkami.
+"wgraj kopię" wczytuje go z powrotem, np. po zmianie telefonu.
+Rób to raz na jakiś czas. Wyczyszczenie danych Chrome kasuje wpisy.
