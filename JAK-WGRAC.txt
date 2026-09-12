@@ -68,6 +68,22 @@ Każdy dzień pamięta, ile rzeczy było do zrobienia wtedy, kiedy go
 wypełniałeś. Usunięcie pozycji też nie rusza historii.
 
 
+WYKRESY
+-------
+W podsumowaniu jest siedem wykresów w karuzeli. Przesuwasz palcem
+w lewo i w prawo, albo klikasz strzałki i kropki pod spodem.
+Każdy ma tytuł, podpisane osie i jedno zdanie o tym, jak go czytać.
+
+Kolejno: ciągłość, co odpuszczasz (osobny pas na każdą pozycję),
+jak się czujesz, sen, które dni cię zjadają, pobudka a samopoczucie,
+outreache. Niektóre potrzebują kilku tygodni danych i do tego czasu
+same napiszą, ile im brakuje.
+
+Wykres snu łączy godzinę położenia się z dnia poprzedniego z godziną
+pobudki z danego dnia, więc pokazuje realne noce i liczy ich średnią
+długość. To odpowiedź na pytanie, ile faktycznie śpisz.
+
+
 WIDOK ROKU
 ----------
 Nad siatką są dwa przyciski: "8 tygodni" i "rok". Widok roczny to
@@ -87,6 +103,10 @@ w rogu kratki, a same notatki zbierają się na liście w podsumowaniu.
 
 KOPIA DANYCH
 ------------
+W lewym dolnym rogu apka pokazuje, ile dni minęło od ostatniej kopii.
+Po trzydziestu dniach napis staje się pomarańczowy. To jedyne
+przypomnienie, jakie apka ma, i pilnuje jedynej rzeczy, którą da się
+nieodwracalnie stracić.
 Stopka > "pobierz kopię" zapisuje plik JSON z dniami i notatkami.
 "wgraj kopię" wczytuje go z powrotem, np. po zmianie telefonu.
 Rób to raz na jakiś czas. Wyczyszczenie danych Chrome kasuje wpisy.
