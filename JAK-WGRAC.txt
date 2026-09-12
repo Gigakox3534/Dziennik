@@ -56,6 +56,25 @@ Jeśli zgubisz telefon, wejdź na console.anthropic.com i skasuj klucz.
 Bez klucza działa cała reszta, tylko notatek nie będzie.
 
 
+POZYCJE DO ODHACZENIA
+---------------------
+Na starcie są dwie: 100 pompek i 5 minut medytacji. Pod listą masz
+"+ dodaj pozycję" i "edytuj". Nazwy zmieniasz dowolnie, pozycje
+dodajesz do sześciu, możesz je też usuwać. Zapis wieczorny jest
+stały i nie da się go wyrzucić.
+
+Dodanie nowej pozycji nie cofa wcześniejszych kompletnych dni.
+Każdy dzień pamięta, ile rzeczy było do zrobienia wtedy, kiedy go
+wypełniałeś. Usunięcie pozycji też nie rusza historii.
+
+
+WIDOK ROKU
+----------
+Nad siatką są dwa przyciski: "8 tygodni" i "rok". Widok roczny to
+jedna kratka na dzień, 52 tygodnie naraz. Kratkę można dotknąć,
+żeby wejść w ten dzień.
+
+
 ZAPIS WIECZORNY
 ---------------
 Pięć pól: godzina położenia, godzina pobudki, liczba outreachy,
