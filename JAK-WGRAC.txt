@@ -84,11 +84,17 @@ pobudki z danego dnia, więc pokazuje realne noce i liczy ich średnią
 długość. To odpowiedź na pytanie, ile faktycznie śpisz.
 
 
-WIDOK ROKU
-----------
-Nad siatką są dwa przyciski: "8 tygodni" i "rok". Widok roczny to
-jedna kratka na dzień, 52 tygodnie naraz. Kratkę można dotknąć,
-żeby wejść w ten dzień.
+OKRES
+-----
+Nad siatką jest jeden przełącznik: tydzień, miesiąc, rok. Rządzi
+wszystkim naraz - siatką, statystykami, wykresami i zakresem notatki.
+
+Tydzień to siedem kratek w rzędzie z podpisanymi dniami. Miesiąc to
+kalendarz, kolumny odpowiadają dniom tygodnia, więc od razu widać,
+czy sypiesz się zawsze w ten sam dzień. Rok to jedna kratka na dzień,
+52 tygodnie naraz, z miesiącami podpisanymi u góry.
+
+Każdą kratkę można dotknąć, żeby wejść w ten dzień.
 
 
 ZAPIS WIECZORNY

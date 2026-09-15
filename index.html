@@ -119,6 +119,10 @@ h2{font-size:13px;font-weight:500;color:var(--txt2);margin:0}
 .cell.opis::after{content:"";position:absolute;right:2.5px;bottom:2.5px;width:3.5px;height:3.5px;
   border-radius:50%;background:var(--txt);opacity:.5}
 .cell.f3.opis::after{background:var(--night);opacity:.55}
+.dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;
+  font-size:10px;color:var(--txt3);text-align:center}
+.pusto{aspect-ratio:1;pointer-events:none;background:transparent;border:none}
+.okresinfo{font-size:12px;color:var(--txt3);margin:0 0 18px;line-height:1.45}
 .ymon{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:13px;
   font-size:9px;color:var(--txt3);margin-bottom:3px;letter-spacing:.02em}
 .ygrid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);grid-auto-columns:1fr;gap:2px}
@@ -208,8 +212,7 @@ footer button,footer label{background:none;border:none;padding:0;font:inherit;co
 #imp{display:none}
 :focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:4px}
 
-@media(min-width:460px){.grid{grid-template-columns:repeat(14,1fr)}
-  .cell:hover{transform:scale(1.22);border-color:var(--glow);z-index:2}}
+@media(min-width:460px){.cell:hover{transform:scale(1.22);border-color:var(--glow);z-index:2}}
 @media(prefers-reduced-motion:no-preference){
   .item,.pill,.cell,.toggle,.btn,.arow,.stat,.vsw button{transition:all .16s var(--e)}
   .ring .fg{transition:stroke-dashoffset .55s var(--e)}
@@ -261,7 +264,7 @@ footer button,footer label{background:none;border:none;padding:0;font:inherit;co
 
   <section>
     <div class="shead"><h2>zapis</h2>
-      <div class="vsw" id="vsw"><button data-w="krotki" class="on">8 tygodni</button><button data-w="rok">rok</button></div>
+      <div class="vsw" id="okres"><button data-r="7">tydzień</button><button data-r="30" class="on">miesiąc</button><button data-r="365">rok</button></div>
     </div>
     <div class="counts">
       <div><div class="big" id="total">0</div><p>dni kompletnych</p></div>
@@ -274,10 +277,7 @@ footer button,footer label{background:none;border:none;padding:0;font:inherit;co
   <section>
     <button class="toggle" id="sumbtn">podsumowanie<i id="caret">rozwiń</i></button>
     <div class="panelwrap" id="panelwrap"><div><div class="panel">
-      <div class="ranges" id="ranges">
-        <button class="pill on" data-r="7">tydzień</button>
-        <button class="pill" data-r="30">miesiąc</button>
-        <button class="pill" data-r="365">rok</button></div>
+      <p class="okresinfo" id="okresinfo"></p>
       <div class="stats" id="stats"></div>
       <div class="carwrap"><div class="carousel" id="car"></div></div>
       <div class="dotsrow"><button class="nav" id="prev" aria-label="poprzedni wykres">‹</button><div class="dots" id="dots"></div><button class="nav" id="next" aria-label="następny wykres">›</button></div>
@@ -325,7 +325,7 @@ const DOMYSLNE=[{id:'p',nazwa:'100 pompek'},{id:'m',nazwa:'5 minut medytacji'}];
 
 let data={},notatki=[],punkty=[],klucz='',ostKopia=0,
     viewing=iso(new Date()),openLog=false,panelOpen=false,edycja=false,
-    range=7,widok='krotki';
+    range=30;
 
 function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function fromIso(s){const a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
@@ -507,44 +507,45 @@ function podpowiedz(k,el,host){
   tip.classList.add('on');clearTimeout(tip._t);tip._t=setTimeout(()=>tip.classList.remove('on'),2400);
 }
 function renderGrid(){
-  const g=document.getElementById('grid'),ym=document.getElementById('ymon'),
+  const g=document.getElementById('grid'),hd=document.getElementById('ymon'),
         host=document.getElementById('gridwrap'),t=today();
-  g.innerHTML='';ym.innerHTML='';
+  g.innerHTML='';hd.innerHTML='';hd.hidden=false;
+  const dodaj=(k,cls)=>{
+    const bt=document.createElement('button'),p=poziom(k);
+    bt.className=cls+(p?' f'+p:'')+(k===t?' today':'')+(day(k).opis?' opis':'');
+    bt.setAttribute('aria-label',dat(k)+', '+score(k)+' z '+cel(k));
+    bt.onmouseenter=()=>podpowiedz(k,bt,host);
+    bt.onclick=()=>{podpowiedz(k,bt,host);viewing=k;openLog=false;render();window.scrollTo({top:0,behavior:'smooth'})};
+    g.appendChild(bt);
+  };
+  const pusta=cls=>{const d=document.createElement('div');d.className=cls+' pusto';g.appendChild(d)};
+  const dow=k=>DOW[(fromIso(k).getDay()+6)%7];
 
-  if(widok==='rok'){
-    g.className='ygrid';ym.hidden=false;
-    const start=ponOf(shift(t,-364));
-    let kol=0,ostatni=-1;
+  if(range===365){
+    g.className='ygrid';hd.className='ymon';
+    const start=ponOf(shift(t,-364));let ost=-1;
     for(let i=0;i<53*7;i++){
       const k=shift(start,i);
-      if(i%7===0){
-        kol++;const m=fromIso(k).getMonth();
-        const lab=document.createElement('span');
-        if(m!==ostatni&&fromIso(k).getDate()<=7){lab.textContent=MSKR[m];ostatni=m}
-        ym.appendChild(lab);
-      }
-      const b=document.createElement('button'),p=poziom(k),ahead=k>t;
-      b.className='yc'+(p?' f'+p:'')+(k===t?' today':'')+(ahead?' ahead':'');
-      b.setAttribute('aria-label',dat(k)+', '+score(k)+' z '+cel(k));
-      if(!ahead){
-        b.onclick=()=>{podpowiedz(k,b,host);viewing=k;openLog=false;render();window.scrollTo({top:0,behavior:'smooth'})};
-        b.onmouseenter=()=>podpowiedz(k,b,host);
-      }
-      g.appendChild(b);
+      if(i%7===0){const m=fromIso(k).getMonth(),lab=document.createElement('span');
+        if(m!==ost&&fromIso(k).getDate()<=7){lab.textContent=MSKR[m];ost=m}
+        hd.appendChild(lab)}
+      if(k>t)pusta('yc'); else dodaj(k,'yc');
     }
     document.getElementById('from').textContent=dat(start)+' '+fromIso(start).getFullYear();
+  }else if(range===7){
+    g.className='grid';hd.className='dowrow';
+    for(let i=6;i>=0;i--){const k=shift(t,-i);
+      const sp=document.createElement('span');sp.textContent=dow(k);hd.appendChild(sp);
+      dodaj(k,'cell');}
+    document.getElementById('from').textContent=dat(shift(t,-6));
   }else{
-    g.className='grid';ym.hidden=true;
-    const cols=window.innerWidth<460?7:14,n=cols*4,start=shift(t,-(n-1));
+    g.className='grid';hd.className='dowrow';
+    DOW.forEach(d=>{const sp=document.createElement('span');sp.textContent=d;hd.appendChild(sp)});
+    const start=ponOf(shift(t,-(range-1)));
+    const dni=Math.round((fromIso(t)-fromIso(start))/86400000)+1;
+    const n=Math.ceil(dni/7)*7;
+    for(let i=0;i<n;i++){const k=shift(start,i);if(k>t)pusta('cell');else dodaj(k,'cell')}
     document.getElementById('from').textContent=dat(start);
-    for(let i=0;i<n;i++){
-      const k=shift(start,i),b=document.createElement('button'),p=poziom(k);
-      b.className='cell'+(p?' f'+p:'')+(k===t?' today':'')+(day(k).opis?' opis':'');
-      b.setAttribute('aria-label',dat(k)+', '+score(k)+' z '+cel(k));
-      b.onmouseenter=()=>podpowiedz(k,b,host);
-      b.onclick=()=>{podpowiedz(k,b,host);viewing=k;openLog=false;render();window.scrollTo({top:0,behavior:'smooth'})};
-      g.appendChild(b);
-    }
   }
   document.getElementById('total').textContent=Object.keys(data).filter(komplet).length;
   let st=0,cur=t;if(!komplet(t))cur=shift(t,-1);
@@ -552,11 +553,11 @@ function renderGrid(){
   document.getElementById('streak').textContent=st;
 }
 
-/* ---------- podsumowanie ---------- */
 function okno(){const t=today(),o=[];for(let i=range-1;i>=0;i--){const k=shift(t,-i);
   o.push({k:k,e:day(k),s:score(k),c:cel(k)})}return o}
 function renderPanel(){
   const w=okno(),ile=w.length;
+  document.getElementById('okresinfo').textContent='Wszystko poniżej dotyczy okresu: '+NAZWA[range]+'. Zmienisz go przełącznikiem przy siatce.';
   const rate=Math.round(srednia(w.map(r=>Math.min(1,r.s/r.c)))*100);
   const kompl=w.filter(r=>komplet(r.k)).length;
   const pob=srednia(w.map(r=>mins(r.e.pobudka)).filter(v=>v!=null));
@@ -803,9 +804,9 @@ function dane(){
     return {dzien:r.k,zrobione:zrobione,z_ilu:r.c,polozenie:e.spanie||null,pobudka:e.pobudka||null,
       outreache:e.out??null,odczyt:e.teraz?SLOWA[e.teraz]:null,notatka:e.opis||null}})};
 }
-const DLUGOSC={7:'3 do 5 zdań, jeden akapit',
-  30:'6 do 10 zdań, możesz podzielić na dwa akapity',
-  365:'kilkanaście zdań w trzech akapitach: co się zmieniło przez rok, co zostało takie samo, i jedna rzecz, którą widać najwyraźniej'};
+const DLUGOSC={7:'5 do 8 zdań, jeden akapit',
+  30:'10 do 14 zdań w dwóch akapitach',
+  365:'trzy akapity: co się przez rok zmieniło, co zostało takie samo, i co zmienić na kolejny rok'};
 function pokazNote(n){
   const o=document.getElementById('written');o.hidden=false;o.textContent=n.tekst;
   document.getElementById('stamp').textContent=NAZWA[n.zakres]+' · '+new Date(n.ts).toLocaleDateString('pl-PL')+' · z '+n.dni+' dni z wpisami'}
@@ -831,7 +832,7 @@ document.getElementById('gen').onclick=async()=>{
     naglowki["anthropic-dangerous-direct-browser-access"]="true"}
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:naglowki,
-      body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:"user",content:
+      body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:"user",content:
         "Oto dziennik jednej osoby za ostatni okres: "+NAZWA[range]+".\n"+
         "Codzienne pozycje do odhaczenia są wymienione pod kluczem pozycje. Osobno jest zapis wieczorny, który zawiera "+
         "godzinę położenia się spać, godzinę pobudki, liczbę wysłanych outreachy (jego praca), odczyt samopoczucia "+
@@ -839,16 +840,21 @@ document.getElementById('gen').onclick=async()=>{
         "krótką notatkę własną. Pole z_ilu mówi, ile rzeczy tego dnia było do zrobienia w sumie. "+
         "Dni oznaczone pusty to dni bez wpisu.\n\n"+
         (range===365?"Dane są zagregowane tygodniowo.\n\n":"")+JSON.stringify(rows)+"\n\n"+
-        "Napisz po polsku notatkę, "+DLUGOSC[range]+", mówiąc do tej osoby na ty.\n"+
+        "Napisz po polsku notatkę, "+DLUGOSC[range]+", mówiąc do tej osoby na ty. "+
+        "Nie streszczaj danych, bo ona je widzi. Masz powiedzieć to, czego z samego patrzenia na nie nie widać.\n\n"+
+        "Budowa notatki:\n"+
+        "1. Jedna albo dwie obserwacje, każda oparta na konkretnej liczbie z tych danych. Szukaj rzeczy, które same się nie rzucają w oczy: która pozycja wypada i w jakie dni, czy coś idzie w parze z czymś innym, czy godziny się przesuwają, co się zmieniło względem wcześniejszej części okresu.\n"+
+        "2. Jedna konkretna rzecz do zmiany na najbliższy okres. Ma wynikać wprost z tej obserwacji, ma być mała i wykonalna. Żadnych ogólników w stylu bądź konsekwentny albo trzymaj się planu.\n"+
+        "3. Jedno zdanie o tym, po czym pozna, czy to zadziałało, czyli która liczba ma się ruszyć i w którą stronę.\n\n"+
         "Zasady bezwzględne:\n"+
         "- Opierasz się wyłącznie na tych danych. Nic nie zmyślasz i niczego nie domniemujesz o jej życiu.\n"+
-        "- Jeśli danych jest za mało na jakiś wzór, mówisz to wprost zamiast wymyślać wzór.\n"+
+        "- Jeśli danych jest za mało na jakąkolwiek obserwację, mówisz to wprost, podajesz ile dni brakuje, i na tym kończysz. Nie wymyślasz wzoru ani rady na siłę.\n"+
+        "- Radzisz wyłącznie w sprawie tego zapisu i tych konkretnych pozycji. Nie oceniasz człowieka, nie diagnozujesz, nie wnioskujesz o jego charakterze, motywacji, stanie psychicznym ani o tym, co się u niego dzieje poza tymi liczbami. Nie doradzasz terapii ani leczenia.\n"+
+        "- Notatki własne traktujesz jako fakty, które ta osoba zapisała. Możesz je zestawić z liczbami. Nie dopowiadasz, co za nimi stoi.\n"+
+        "- Przerwy i puste dni opisujesz jako fakt, nigdy jako zarzut. Bez moralizowania.\n"+
         "- Piszesz zwykłym, prostym językiem. Krótkie zdania. Bez porównań, bez metafor, bez motywacyjnych frazesów, bez chwalenia na siłę, bez ładnej puenty.\n"+
-        "- Przerwy i puste dni opisujesz jako fakt, nigdy jako zarzut. Bez moralizowania i bez oceniania człowieka.\n"+
-        "- Nie diagnozujesz, nie doradzasz leczenia ani terapii.\n"+
-        "- Konkretne liczby i godziny podajesz wprost, bo o nie chodzi.\n"+
-        "- Notatki własne traktujesz jako fakty, które ta osoba zapisała. Możesz je streścić lub zestawić z liczbami, ale nie dopowiadasz, co za nimi stoi, i nie wyciągasz wniosków o jej stanie czy charakterze.\n"+
-        "- Nie kończysz zachętą ani pytaniem. Sam tekst notatki, bez nagłówka."}]})});
+        "- Konkretne liczby, godziny i dni tygodnia podajesz wprost.\n"+
+        "- Bez nagłówków, bez numerowania punktów w tekście, bez pytania na koniec. Sam ciągły tekst."}]})});
     if(!r.ok){const t=await r.text();out.hidden=false;
       out.textContent='Serwer odmówił ('+r.status+').'+(WLASNY_KLUCZ?' Sprawdź klucz API.':'')+'\n'+t.slice(0,180)}
     else{const d=await r.json();
@@ -885,16 +891,16 @@ document.getElementById('sumbtn').onclick=()=>{panelOpen=!panelOpen;
   document.getElementById('panelwrap').classList.toggle('open',panelOpen);
   document.getElementById('caret').textContent=panelOpen?'zwiń':'rozwiń';
   if(panelOpen)renderPanel()};
-document.querySelectorAll('#ranges .pill').forEach(b=>{b.onclick=()=>{range=+b.dataset.r;
-  document.querySelectorAll('#ranges .pill').forEach(o=>o.classList.toggle('on',o===b));renderPanel()}});
 (()=>{const car=document.getElementById('car');let st=null;
   car.addEventListener('scroll',()=>{clearTimeout(st);st=setTimeout(()=>{
     const i=Math.round(car.scrollLeft/Math.max(1,car.clientWidth));
     if(i!==slajd&&i>=0&&i<ILE_W){slajd=i;znaczniki()}},70)},{passive:true});
   document.getElementById('prev').onclick=()=>skok(slajd-1);
   document.getElementById('next').onclick=()=>skok(slajd+1);})();
-document.querySelectorAll('#vsw button').forEach(b=>{b.onclick=()=>{widok=b.dataset.w;
-  document.querySelectorAll('#vsw button').forEach(o=>o.classList.toggle('on',o===b));renderGrid()}});
+document.querySelectorAll('#okres button').forEach(b=>{b.onclick=()=>{
+  range=+b.dataset.r;slajd=0;
+  document.querySelectorAll('#okres button').forEach(o=>o.classList.toggle('on',o===b));
+  renderGrid();if(panelOpen)renderPanel()}});
 document.getElementById('export').onclick=()=>{
   const blob=new Blob([JSON.stringify({wersja:2,punkty:punkty,dni:data,notatki:notatki},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
