@@ -190,6 +190,9 @@ h2{font-size:13px;font-weight:500;color:var(--txt2);margin:0}
 .btn{padding:13px 20px;background:var(--glow);border:none;border-radius:10px;
   font:inherit;font-size:15px;font-weight:500;color:#14212A;cursor:pointer}
 .btn:disabled{opacity:.45}
+.lnk{display:block;background:none;border:none;padding:10px 0 0;font:inherit;font-size:13px;
+  color:var(--txt2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.lnk:hover{color:var(--glow)}
 .btn2{margin-top:10px;padding:10px 16px;background:none;border:1px solid var(--glow-line);
   border-radius:9px;font:inherit;font-size:14px;color:var(--glow);cursor:pointer}
 .keyrow{margin-top:14px;padding:16px;background:var(--raise);border:1px solid var(--line);border-radius:12px}
@@ -284,6 +287,11 @@ footer button,footer label{background:none;border:none;padding:0;font:inherit;co
       <div class="dnotes" id="noteslist"></div>
       <div class="notebox">
         <button class="btn" id="gen">napisz notatkę</button>
+        <button class="lnk" id="ctxbtn">kontekst dla modelu</button>
+        <div class="keyrow" id="ctxrow" hidden>
+          <p class="tiny" style="margin-top:0">Kilka zdań o tobie i o tym, po co prowadzisz ten dziennik. Model czyta to przed napisaniem notatki, dzięki czemu rada jest o tobie, a nie ogólna. Zostaje na tym urządzeniu. Wpisuj tylko to, co chcesz tam mieć.</p>
+          <textarea class="in note" id="ctx" maxlength="800" placeholder="czym się zajmujesz, co próbujesz zmienić, co już próbowałeś i nie wyszło"></textarea>
+          <button class="btn2" id="savectx">zapisz kontekst</button></div>
         <div class="keyrow" id="keyrow" hidden>
           <p class="tiny" style="margin-top:0">Notatkę pisze model Anthropic, więc potrzebny jest twój klucz API z console.anthropic.com. Zostaje tylko na tym telefonie i nigdzie go nie wysyłam.</p>
           <input class="in wide" id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
@@ -314,7 +322,7 @@ const WLASNY_KLUCZ=true;
 /* ========================== */
 
 const KEY='dziennik-dni',NKEY='dziennik-notatki',WKEY='dziennik-wersja',
-      AKEY='dziennik-klucz',PKEY='dziennik-punkty',BKEY='dziennik-kopia';
+      AKEY='dziennik-klucz',PKEY='dziennik-punkty',BKEY='dziennik-kopia',CKEY='dziennik-kontekst';
 const DNI=['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
 const MIES=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
 const MSKR=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
@@ -323,7 +331,7 @@ const NAZWA={7:'tydzień',30:'miesiąc',365:'rok'};
 const MAXV=5, MAXP=6;
 const DOMYSLNE=[{id:'p',nazwa:'100 pompek'},{id:'m',nazwa:'5 minut medytacji'}];
 
-let data={},notatki=[],punkty=[],klucz='',ostKopia=0,
+let data={},notatki=[],punkty=[],klucz='',kontekst='',ostKopia=0,
     viewing=iso(new Date()),openLog=false,panelOpen=false,edycja=false,
     range=30;
 
@@ -353,6 +361,7 @@ async function load(){
   if(!Array.isArray(punkty)||!punkty.length)punkty=DOMYSLNE.slice();
   if(WLASNY_KLUCZ)klucz=await ST.get(AKEY)||'';
   ostKopia=parseInt(await ST.get(BKEY)||'0',10)||0;
+  kontekst=await ST.get(CKEY)||'';
   const wer=parseInt(await ST.get(WKEY)||'1',10);
   if(wer<2){
     Object.keys(data).forEach(k=>{const t=data[k].teraz;if(t===4)data[k].teraz=5;else if(t===3)data[k].teraz=4});
@@ -804,8 +813,8 @@ function dane(){
     return {dzien:r.k,zrobione:zrobione,z_ilu:r.c,polozenie:e.spanie||null,pobudka:e.pobudka||null,
       outreache:e.out??null,odczyt:e.teraz?SLOWA[e.teraz]:null,notatka:e.opis||null}})};
 }
-const DLUGOSC={7:'5 do 8 zdań, jeden akapit',
-  30:'10 do 14 zdań w dwóch akapitach',
+const DLUGOSC={7:'6 do 9 zdań, jeden akapit',
+  30:'dwa akapity, razem 12 do 16 zdań',
   365:'trzy akapity: co się przez rok zmieniło, co zostało takie samo, i co zmienić na kolejny rok'};
 function pokazNote(n){
   const o=document.getElementById('written');o.hidden=false;o.textContent=n.tekst;
@@ -833,28 +842,29 @@ document.getElementById('gen').onclick=async()=>{
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:naglowki,
       body:JSON.stringify({model:MODEL,max_tokens:1500,messages:[{role:"user",content:
-        "Oto dziennik jednej osoby za ostatni okres: "+NAZWA[range]+".\n"+
+        "Jesteś doradcą tej osoby. Ona czyta to po to, żeby dowiedzieć się czegoś o sobie i wiedzieć, co zrobić dalej. "+
+        "Nie jesteś generatorem statystyk, liczby ma przed oczami w aplikacji.\n\n"+
+        (kontekst?("Tak ta osoba opisała siebie i to, po co prowadzi ten dziennik. Traktuj to jako fakty i pisz pod to:\n"+kontekst+"\n\n"):"")+
+        "Oto jej dziennik za ostatni okres: "+NAZWA[range]+".\n"+
         "Codzienne pozycje do odhaczenia są wymienione pod kluczem pozycje. Osobno jest zapis wieczorny, który zawiera "+
         "godzinę położenia się spać, godzinę pobudki, liczbę wysłanych outreachy (jego praca), odczyt samopoczucia "+
         "w chwili zapisu w skali pięciostopniowej: chujowo, średnio, neutralnie, spoko, dobrze, oraz nieobowiązkową "+
         "krótką notatkę własną. Pole z_ilu mówi, ile rzeczy tego dnia było do zrobienia w sumie. "+
         "Dni oznaczone pusty to dni bez wpisu.\n\n"+
         (range===365?"Dane są zagregowane tygodniowo.\n\n":"")+JSON.stringify(rows)+"\n\n"+
-        "Napisz po polsku notatkę, "+DLUGOSC[range]+", mówiąc do tej osoby na ty. "+
-        "Nie streszczaj danych, bo ona je widzi. Masz powiedzieć to, czego z samego patrzenia na nie nie widać.\n\n"+
-        "Budowa notatki:\n"+
-        "1. Jedna albo dwie obserwacje, każda oparta na konkretnej liczbie z tych danych. Szukaj rzeczy, które same się nie rzucają w oczy: która pozycja wypada i w jakie dni, czy coś idzie w parze z czymś innym, czy godziny się przesuwają, co się zmieniło względem wcześniejszej części okresu.\n"+
-        "2. Jedna konkretna rzecz do zmiany na najbliższy okres. Ma wynikać wprost z tej obserwacji, ma być mała i wykonalna. Żadnych ogólników w stylu bądź konsekwentny albo trzymaj się planu.\n"+
-        "3. Jedno zdanie o tym, po czym pozna, czy to zadziałało, czyli która liczba ma się ruszyć i w którą stronę.\n\n"+
-        "Zasady bezwzględne:\n"+
-        "- Opierasz się wyłącznie na tych danych. Nic nie zmyślasz i niczego nie domniemujesz o jej życiu.\n"+
-        "- Jeśli danych jest za mało na jakąkolwiek obserwację, mówisz to wprost, podajesz ile dni brakuje, i na tym kończysz. Nie wymyślasz wzoru ani rady na siłę.\n"+
-        "- Radzisz wyłącznie w sprawie tego zapisu i tych konkretnych pozycji. Nie oceniasz człowieka, nie diagnozujesz, nie wnioskujesz o jego charakterze, motywacji, stanie psychicznym ani o tym, co się u niego dzieje poza tymi liczbami. Nie doradzasz terapii ani leczenia.\n"+
-        "- Notatki własne traktujesz jako fakty, które ta osoba zapisała. Możesz je zestawić z liczbami. Nie dopowiadasz, co za nimi stoi.\n"+
-        "- Przerwy i puste dni opisujesz jako fakt, nigdy jako zarzut. Bez moralizowania.\n"+
-        "- Piszesz zwykłym, prostym językiem. Krótkie zdania. Bez porównań, bez metafor, bez motywacyjnych frazesów, bez chwalenia na siłę, bez ładnej puenty.\n"+
-        "- Konkretne liczby, godziny i dni tygodnia podajesz wprost.\n"+
-        "- Bez nagłówków, bez numerowania punktów w tekście, bez pytania na koniec. Sam ciągły tekst."}]})});
+        "Napisz po polsku, na ty, "+DLUGOSC[range]+".\n\n"+
+        "Czego od ciebie oczekuję:\n"+
+        "- Najwyżej jedno zdanie streszczenia liczb. Cała reszta idzie na to, czego z samych liczb nie widać.\n"+
+        "- Nazwij wprost największy problem w tych danych. Jedną rzecz, po imieniu, bez owijania. Masz prawo być nieprzyjemny, jeśli liczby na to zasługują.\n"+
+        "- Powiedz, co konkretnie zmienić w najbliższym okresie. Jedna rzecz, mała i wykonalna, wynikająca wprost z tych danych. Żadnych ogólników typu bądź konsekwentny.\n"+
+        "- Jeśli dane przeczą temu, co ta osoba napisała w notatkach albo w opisie siebie, powiedz to wprost.\n"+
+        "- Na koniec jedno zdanie o tym, która liczba ma się ruszyć i w którą stronę, żeby było wiadomo, czy zadziałało.\n\n"+
+        "Czego nie robisz:\n"+
+        "- Nie diagnozujesz, nie oceniasz stanu psychicznego, nie doradzasz terapii, leczenia ani leków. Jeśli w opisie siebie albo w notatkach pojawia się coś z tej półki, zostawiasz to bez komentarza i piszesz o dzienniku.\n"+
+        "- Nie moralizujesz i nie oceniasz jej jako człowieka. Krytykujesz konkretne zachowanie widoczne w danych, nigdy charakter, motywację czy silną wolę.\n"+
+        "- Nie chwalisz na siłę i nie kończysz zdaniem podnoszącym na duchu.\n"+
+        "- Nie zmyślasz wzorów. Jeśli dni jest za mało na jakikolwiek wniosek, piszesz to w jednym zdaniu, podajesz ile brakuje, i kończysz.\n"+
+        "- Piszesz prosto i krótkimi zdaniami, bez metafor i porównań. Bez nagłówków, bez list, bez pytania na końcu. Sam ciągły tekst."}]})});
     if(!r.ok){const t=await r.text();out.hidden=false;
       out.textContent='Serwer odmówił ('+r.status+').'+(WLASNY_KLUCZ?' Sprawdź klucz API.':'')+'\n'+t.slice(0,180)}
     else{const d=await r.json();
@@ -870,6 +880,15 @@ const _sk=document.getElementById('savekey');if(_sk)_sk.onclick=async()=>{
   const v=document.getElementById('apikey').value.trim();if(!v)return;
   klucz=v;await ST.set(AKEY,v);document.getElementById('keyrow').hidden=true;
   komunikat('klucz zapisany')};
+document.getElementById('savectx').onclick=async()=>{
+  kontekst=document.getElementById('ctx').value.trim();
+  await ST.set(CKEY,kontekst);
+  document.getElementById('ctxrow').hidden=true;
+  komunikat(kontekst?'kontekst zapisany':'kontekst wyczyszczony')};
+document.getElementById('ctxbtn').onclick=()=>{
+  const cr=document.getElementById('ctxrow');cr.hidden=!cr.hidden;
+  if(!cr.hidden){document.getElementById('ctx').value=kontekst;
+    cr.scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('ctx').focus()}};
 const _kb=document.getElementById('keybtn');if(_kb)_kb.onclick=()=>{
   const kr=document.getElementById('keyrow');kr.hidden=!kr.hidden;
   if(!kr.hidden){document.getElementById('apikey').value=klucz;
